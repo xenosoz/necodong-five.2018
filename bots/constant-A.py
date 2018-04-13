@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 
-seq = int('0' + __name__.split('.')[-1].split('-')[1][1:])
-
-cand = '12345!'
-
 def think(hands, history, old_games):
-    global seq
+    seq = int('0' + __name__.split('.')[-1].split('-')[1][1:])
     for _, d in zip(history, range(6, 1, -1)):
         seq //= d
     
@@ -13,6 +9,7 @@ def think(hands, history, old_games):
 
 
 def go():
+    cand = '12345!'
     a_hand = list(cand)
     a_hist = []
     while a_hand:

@@ -36,7 +36,10 @@ def test_round_score():
         assert round_score(lhs, rhs) + round_score(rhs, lhs) == 0
 
 
-def play_a_set(lhs_name, rhs_name):
+def play_a_set(lhs_name, rhs_name, lhs_sets=None, rhs_sets=None):
+    lhs_sets = [] if lhs_sets is None else lhs_sets
+    rhs_sets = [] if rhs_sets is None else rhs_sets
+
     print(' v ' + lhs_name)
     print('    v ' + rhs_name)
 
@@ -54,8 +57,8 @@ def play_a_set(lhs_name, rhs_name):
     rhs_score = 0
 
     while lhs_hand and rhs_hand:
-        lhs_choice = lhs_module.think(lhs_hand, lhs_hist, [])
-        rhs_choice = rhs_module.think(rhs_hand, rhs_hist, [])
+        lhs_choice = lhs_module.think(lhs_hand, lhs_hist, lhs_sets)
+        rhs_choice = rhs_module.think(rhs_hand, rhs_hist, rhs_sets)
 
         lhs_hand.remove(lhs_choice)
         rhs_hand.remove(rhs_choice)
@@ -73,9 +76,29 @@ def play_a_set(lhs_name, rhs_name):
         lhs_score += lhs_delta
         rhs_score += rhs_delta
         if lhs_score >= 3 or rhs_score >= 3:
-            return (lhs_score, rhs_score)
+            return (lhs_score, rhs_score, lhs_hist, rhs_hist)
 
-    return (lhs_score, rhs_score)
+    return (lhs_score, rhs_score, lhs_hist, rhs_hist)
+
+
+def play_a_game(lhs_name, rhs_name):
+    lhs = 0
+    rhs = 0
+    lhs_sets = []
+    rhs_sets = []
+
+    for set_seq in range(11):
+        ls, rs, lh, rh = play_a_set(lhs_name, rhs_name, lhs_sets, rhs_sets)
+
+        lhs_sets.append(lh)
+        rhs_sets.append(rh)
+
+        lhs += (ls > rs)
+        rhs += (rs > ls)
+        if lhs >= 6 or rhs >= 6:
+            return (lhs, rhs)
+
+    return (lhs, rhs)
 
 
 if __name__ == '__main__':
@@ -83,6 +106,6 @@ if __name__ == '__main__':
     lhs_name = 'bots.constant-A'
     rhs_name = 'dummies.constant-B3'
     
-    r = play_a_set(lhs_name, rhs_name)
+    r = play_a_game(lhs_name, rhs_name)
     print(r)
 
