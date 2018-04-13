@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 def think(hands, history, old_games):
     seq = int('0' + __name__.split('.')[-1].split('-')[1][1:])

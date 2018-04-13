@@ -36,12 +36,13 @@ def test_round_score():
         assert round_score(lhs, rhs) + round_score(rhs, lhs) == 0
 
 
-def play_a_set(lhs_name, rhs_name, lhs_sets=None, rhs_sets=None):
+def play_a_set(lhs_name, rhs_name, lhs_sets=None, rhs_sets=None, debug=False):
     lhs_sets = [] if lhs_sets is None else lhs_sets
     rhs_sets = [] if rhs_sets is None else rhs_sets
 
-    print(' v ' + lhs_name)
-    print('    v ' + rhs_name)
+    if debug:
+        print(' v ' + lhs_name)
+        print('    v ' + rhs_name)
 
     lhs_module = import_module(lhs_name)
     rhs_module = import_module(rhs_name)
@@ -69,26 +70,27 @@ def play_a_set(lhs_name, rhs_name, lhs_sets=None, rhs_sets=None):
         lhs_delta = round_score(lhs_choice, rhs_choice)
         rhs_delta = round_score(rhs_choice, lhs_choice)
 
-        print(' [ '[lhs_delta] + lhs_choice + ' ] '[lhs_delta], end='')
-        print(' [ '[rhs_delta] + rhs_choice + ' ] '[rhs_delta], end='')
-        print()
+        if debug:
+            print(' [ '[lhs_delta] + lhs_choice + ' ] '[lhs_delta], end='')
+            print(' [ '[rhs_delta] + rhs_choice + ' ] '[rhs_delta], end='')
+            print()
 
         lhs_score += lhs_delta
         rhs_score += rhs_delta
         if lhs_score >= 3 or rhs_score >= 3:
-            return (lhs_score, rhs_score, lhs_hist, rhs_hist)
+            return (lhs_score, rhs_score, lhs_hist, rhs_hist) 
 
     return (lhs_score, rhs_score, lhs_hist, rhs_hist)
 
 
-def play_a_game(lhs_name, rhs_name):
+def play_a_game(lhs_name, rhs_name, debug=False):
     lhs = 0
     rhs = 0
     lhs_sets = []
     rhs_sets = []
 
     for set_seq in range(11):
-        ls, rs, lh, rh = play_a_set(lhs_name, rhs_name, lhs_sets, rhs_sets)
+        ls, rs, lh, rh = play_a_set(lhs_name, rhs_name, lhs_sets, rhs_sets, debug=debug)
 
         lhs_sets.append(lh)
         rhs_sets.append(rh)
@@ -106,6 +108,6 @@ if __name__ == '__main__':
     lhs_name = 'bots.constant-A'
     rhs_name = 'dummies.constant-B3'
     
-    r = play_a_game(lhs_name, rhs_name)
+    r = play_a_game(lhs_name, rhs_name, debug=True)
     print(r)
 
