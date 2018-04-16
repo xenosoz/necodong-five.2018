@@ -107,8 +107,9 @@ if __name__ == '__main__':
     test_round_score()
     #lhs_name = 'bots.constant-A'
     #rhs_name = 'dummies.constant-C74'
-    lhs_name = 'bots.zero-killer'
-    rhs_name = 'dummies.constant-A'
+
+    lhs_name = 'bots.static-killer'
+    rhs_name = 'dummies.constant-C74'
     
     r = play_a_game(lhs_name, rhs_name, debug=True)
     print(r)
