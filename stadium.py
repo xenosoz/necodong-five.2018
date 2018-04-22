@@ -108,12 +108,15 @@ if __name__ == '__main__':
     #lhs_name = 'bots.constant-A'
     #rhs_name = 'dummies.constant-C74'
 
-    lhs_name = 'bots.congrats'
-    rhs_name = 'bots.static-killer'
-    
-    #lhs_name = 'bots.f-killer'
+    #lhs_name = 'bots.congrats'
     #rhs_name = 'dummies.jinna-A'
 
+    #lhs_name = 'bots.after-contest'
+    #rhs_name = 'bots.static-killer'
+
+    lhs_name = 'bots.after-contest'
+    rhs_name = 'bots.congrats'
+    
     r = play_a_game(lhs_name, rhs_name, debug=True)
     print(r)
 

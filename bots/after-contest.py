@@ -135,8 +135,9 @@ class Widget:
 
     def guess_by_random(self):
         hands = self.mee_hands
-        candidates = [(1, self.random_choice(hands))]
-        yield from self.wrap_guess(candidates, hands)
+        #candidates = [(1, self.random_choice(hands))]
+        #yield from self.wrap_guess(candidates, hands)
+        yield self.random_choice(hands)
 
 
     def guess_by_last_history_all(self, mee_you):
