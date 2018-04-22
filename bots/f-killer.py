@@ -68,43 +68,112 @@ def LCG(seed):
         yield x
 
 
-def random_guess():
-    pass
+def shift_0(x, c):
+    cycle = (0, 4, 2, 5, 3, 1)
+    idx = (cycle.index(x) + c) % len(cycle)
+    return cycle[idx]
 
 
-def frequency_analysis():
-    pass
+def shift_1(x, c):
+    cycle = (0, 4, 3, 2, 5, 1)
+    idx = (cycle.index(x) + c) % len(cycle)
+    return cycle[idx]
 
 
-def history_matching():
-    pass
+def shift_2(x, c):
+    cycle = (0, 4, 5, 3, 2, 1) 
+    idx = (cycle.index(x) + c) % len(cycle)
+    return cycle[idx]
 
 
-def last_p(hands, history, old_games):
-    if old_games:
-        last_game = old_games[-1]
-        last_game_x = [x for x, y in last_game]
-        last_game_y = [y for x, y in last_game]
+class Widget:
+    def __init__(self):
+        self.random = LCG(19937-64)  # NB(xenosoz, 2018): I know it's not MT19937-64 for sure :)
 
-    return hands[0]
+    def random_choice(self, x):
+        pool = tuple(x)
+        r = self.random.__next__()
+        n = len(pool)
+        return pool[r % n]
+
+
+    def random_guess(self):
+        pass
+
+
+    def frequency_analysis(self):
+        pass
+
+
+    def history_matching(self):
+        pass
+
+
+    def build_position_frequency(self):
+        '''self.old_games -> self.[mee|you]_position_frequency'''
+        old_games = self.old_games
+
+        # pf[position][number] := count
+        mee_pf = [[0] * 6 for x in range(6)]  
+        you_pf = [[0] * 6 for x in range(6)]
+
+        for game in old_games:
+            for idx, (mee, you) in enumerate(game):
+                mee_pf[idx][mee] += 1
+                you_pf[idx][you] += 1
+
+        self.mee_position_frequency = mee_pf
+        self.you_position_frequency = you_pf
+
+
+    def mee_guess(self):
+        round_idx = self.round_idx
+        mee_hands = self.mee_hands
+        mee_pf = self.mee_position_frequency
+
+        good_value = max(mee_pf[round_idx][idx] for idx in mee_hands)
+        candidates = [idx for idx in mee_hands if mee_pf[round_idx][idx] == good_value]
+
+        if not candidates:
+            return None
+
+        return self.random_choice(candidates)
+
+
+    def think(self, hands, history, old_games):
+        # A: given condition
+        self.str_hands = hands
+        self.str_history = history
+        self.str_old_games = old_games
+
+        # B1: basic derived info
+        self.round_idx = len(history)
+        self.history = [(str_to_index(mee), str_to_index(you)) for mee, you in self.str_history]
+        self.old_games = [[(str_to_index(mee), str_to_index(you)) for mee, you in game] for game in self.str_old_games]
+
+        self.mee_hands = [str_to_index(hand) for hand in self.str_hands]
+        self.mee_used = sorted(set(range(6)) - set(self.mee_hands))
+
+        self.you_used = sorted(set(str_to_index(you) for mee, you in history))
+        self.you_hands = sorted(set(range(6)) - set(self.you_used))
+
+        # B2: advanced derived info
+        self.build_position_frequency()
+
+        print(self.mee_position_frequency)
+        print(self.you_position_frequency)
+
+
+        choice = self.mee_guess()
+        str_choice = index_to_str(choice)
+        print('choice: ', str_choice)
+
+        return str_choice
+
 
 
 def think(hands, history, old_games):
-    pass
-
-
-    # (0, 4, 2, 5, 3, 1)
-    # (0, 4, 3, 2, 5, 1)
-    # (0, 4, 5, 3, 2, 1)
-
-
-for x in permutations([1,2,3]):
-    print(x)
-
-for x in LCG(3141592):
-    print(x % 5)
-
-
-
+    w = Widget()
+    return w.think(hands, history, old_games)
 
 
