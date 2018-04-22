@@ -68,6 +68,13 @@ def LCG(seed):
         yield x
 
 
+def product(iter_x, iter_y):
+    tup_x, tup_y = tuple(iter_x), tuple(iter_y)
+    for x in tup_x:
+        for y in tup_y:
+            yield (x, y)
+
+
 def shift_0(x, c):
     cycle = (0, 1, 2, 3, 5, 4)
     idx = (cycle.index(x) + c) % len(cycle)
@@ -96,6 +103,7 @@ class Widget:
         self.random = LCG(19937-64)  # NB(xenosoz, 2018): I know it's not MT19937-64 for sure :)
         self.solutions = None
         self.scores = None
+        self.choice = None
 
     def random_choice(self, x):
         pool = tuple(x)
@@ -155,6 +163,67 @@ class Widget:
         yield from self.guess_by_last_history_all(1)
 
 
+    def build_simulation(self, lhs_hands, rhs_hands, lhs_score, rhs_score):
+        simulation_lhs = dict()
+        simulation_rhs = dict()
+
+        def iter_score(lhs_tail, rhs_tail, lhs_score, rhs_score):
+            ls, rs = lhs_score, rhs_score
+            for ll, rr in product(permutations(lhs_tail), permutations(rhs_tail)):
+                for l, r in zip(ll, rr):
+                    s = round_score(l, r)
+                    if s > 0: ls += 1
+                    if s < 0: rs += 1
+                    #if ls >= 3 or rs >= 3: pass
+            return (ls, rs)  # XXX
+
+        for lhs, rhs in product(range(len(lhs_hands)), range(len(rhs_hands))):
+            lhs_choice = lhs_hands[lhs]
+            rhs_choice = rhs_hands[rhs]
+
+            lhs_tail = lhs_hands[:lhs] + lhs_hands[lhs+1:]
+            rhs_tail = rhs_hands[:rhs] + rhs_hands[rhs+1:]
+            ls, rs = iter_score(lhs_tail, rhs_tail, lhs_score, rhs_score)
+
+            ll = simulation_lhs.get(lhs_choice, {})
+            ll[rhs_choice] = (ls > rs, ls == rs, ls, -rs)
+            simulation_lhs[lhs_choice] = ll
+
+            rr = simulation_rhs.get(rhs_choice, {})
+            rr[lhs_choice] = (rs > ls, rs == ls, rs, -ls)
+            simulation_rhs[rhs_choice] = rr
+
+        self.simulation_lhs = simulation_lhs
+        self.simulation_rhs = simulation_rhs
+
+
+    def guess_by_simulation_all(self, simulation):
+        hands = self.mee_hands
+        good = (False, False, float('-inf'), float('inf'))
+        good_choices = []
+
+        for choice, data in simulation.items():
+            value = min(data.values())
+
+            if good < value:
+                good_choices = []
+                good = value
+
+            if good == value:
+                good_choices.append(choice)
+
+        choice = self.random_choice(good_choices)
+        yield from self.wrap_guess([(1, choice)], hands)
+
+
+    def guess_by_simulation_mee(self):
+        yield from self.guess_by_simulation_all(self.simulation_lhs)
+
+
+    def guess_by_simulation_you(self):
+        yield from self.guess_by_simulation_all(self.simulation_rhs)
+
+
     def build_position_frequency(self):
         '''self.old_games -> self.[mee|you]_position_frequency'''
         old_games = self.old_games
@@ -205,6 +274,8 @@ class Widget:
         yield from self.guess_by_last_history_you()
         yield from self.guess_by_position_frequency_mee()
         yield from self.guess_by_position_frequency_you()
+        yield from self.guess_by_simulation_mee()
+        yield from self.guess_by_simulation_you()
 
 
     def think(self, hands, history, old_games):
@@ -221,11 +292,15 @@ class Widget:
         self.mee_hands = [str_to_index(hand) for hand in self.str_hands]
         self.mee_used = sorted(set(range(6)) - set(self.mee_hands))
 
-        self.you_used = sorted(set(str_to_index(you) for mee, you in history))
+        self.you_used = sorted(set(you for mee, you in self.history))
         self.you_hands = sorted(set(range(6)) - set(self.you_used))
+
+        self.mee_score = sum(round_score(mee, you) > 0 for mee, you in self.history)
+        self.you_score = sum(round_score(you, mee) > 0 for mee, you in self.history)
 
         # B2: advanced derived info
         self.build_position_frequency()
+        self.build_simulation(self.mee_hands, self.you_hands, self.mee_score, self.you_score)
 
         #print(self.mee_position_frequency)
         #print(self.you_position_frequency)
@@ -247,6 +322,7 @@ class Widget:
 
         self.solutions = solutions
         self.scores = scores
+        self.choice = choice
 
         str_choice = index_to_str(choice)
         return str_choice
