@@ -94,6 +94,8 @@ def multiplex(choice, c):
 class Widget:
     def __init__(self):
         self.random = LCG(19937-64)  # NB(xenosoz, 2018): I know it's not MT19937-64 for sure :)
+        self.solutions = None
+        self.scores = None
 
     def random_choice(self, x):
         pool = tuple(x)
@@ -141,7 +143,7 @@ class Widget:
         self.you_position_frequency = you_pf
 
 
-    def all_guess(self, pf):
+    def guess_position_frequency_all(self, pf):
         round_idx = self.round_idx
 
         z = sum(pf[round_idx])
@@ -154,18 +156,23 @@ class Widget:
         return sorted(((pf[round_idx][idx]/float(z), idx) for idx in candidates), reverse=True)
 
 
-    def mee_guess(self):
+    def guess_position_frequency_mee(self):
         hands = self.mee_hands  # NB(xenosoz, 2018): always choose 'mee' here.
 
-        guess = self.all_guess(self.mee_position_frequency)
+        guess = self.guess_position_frequency_all(self.mee_position_frequency)
         yield from self.wrap_guess(guess, hands)
 
 
-    def you_guess(self):
+    def guess_position_frequency_you(self):
         hands = self.mee_hands  # NB(xenosoz, 2018): always choose 'mee' here.
 
-        guess = self.all_guess(self.you_position_frequency)
+        guess = self.guess_position_frequency_all(self.you_position_frequency)
         yield from self.wrap_guess(guess, hands)
+
+    
+    def guess(self):
+        yield from self.guess_position_frequency_mee()
+        yield from self.guess_position_frequency_you()
 
 
     def think(self, hands, history, old_games):
@@ -188,21 +195,40 @@ class Widget:
         # B2: advanced derived info
         self.build_position_frequency()
 
-        if False:
-            print('hands:', hands)
-            print('history:', history)
-            print('old_games:', old_games)
-            print()
-
         #print(self.mee_position_frequency)
         #print(self.you_position_frequency)
 
 
-        #choice = self.mee_guess()
-        choice = list(self.you_guess())[1]
+        solutions = list(self.guess())
+        if self.scores is None:
+            scores = [0] * len(solutions)
+        else:
+            scores = self.scores
+
+        good_score = max(scores)
+        choices = [solutions[idx] for idx in range(len(scores)) if scores[idx] == good_score]
+
+        if choices:
+            choice = self.random_choice(choices)
+        else:
+            choice = self.random_choice(self.mee_hands)
+
+        self.solutions = solutions
+        self.scores = scores
+
         str_choice = index_to_str(choice)
         return str_choice
 
+
+    def heat(self, choice_mee_you):
+        you = str_to_index(choice_mee_you[1])
+        solutions = self.solutions
+        scores = self.scores
+
+        for idx, mee in enumerate(solutions):
+            scores[idx] += round_score(mee, you)
+
+        self.scores = scores
 
 
 def think(_hands, _history, _old_games):
@@ -216,14 +242,14 @@ def think(_hands, _history, _old_games):
 
         for history_idx in range(len(game)):
             choice = w.think(sorted(hands), game[:history_idx], old_games)
+            w.heat(game[history_idx])
             hands.remove(choice)
 
     hands = set('12345!')
     for history_idx in range(len(_history)):
         choice = w.think(sorted(hands), _history[:history_idx], _old_games)
+        w.heat(_history[history_idx])
         hands.remove(choice)
-
-    assert(set(hands) == set(_hands))
 
     choice = w.think(sorted(_hands), _history, _old_games)
     return choice
