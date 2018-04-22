@@ -111,11 +111,23 @@ if __name__ == '__main__':
     #lhs_name = 'bots.congrats'
     #rhs_name = 'dummies.jinna-A'
 
-    #lhs_name = 'bots.after-contest'
+    lhs_name = 'bots.congrats'
+    rhs_name = 'bots.static-killer'  # 4 vs 6
+    #rhs_name = 'dummies.constant-C74'  # 6 vs 1
+    #rhs_name = 'dummies.constant-D128'  # 6 vs 0
+    #rhs_name = 'dummies.jinna-A'
+
+    #lhs_name = 'bots.after-contest'  # 6 vs 2
     #rhs_name = 'bots.static-killer'
 
-    lhs_name = 'bots.after-contest'
-    rhs_name = 'bots.congrats'
+    #lhs_name = 'bots.after-contest'  # 6 vs 2
+    #rhs_name = 'bots.congrats'
+
+    #lhs_name = 'bots.more-variance'  # 5 vs 4
+    #rhs_name = 'bots.congrats'
+
+    #lhs_name = 'bots.more-variance'  # 4 vs 4
+    #rhs_name = 'bots.after-contest'
     
     r = play_a_game(lhs_name, rhs_name, debug=True)
     print(r)
