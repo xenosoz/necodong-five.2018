@@ -104,6 +104,7 @@ class Widget:
         self.solutions = None
         self.scores = None
         self.choice = None
+        self.general_frequency = dict()
 
     def random_choice(self, x):
         pool = tuple(x)
@@ -122,18 +123,20 @@ class Widget:
                 yield self.random_choice(hands)
 
 
+    def mode_choice(self, iterable):
+        counter = dict()
+        for v in iterable:
+            counter[v] = counter.get(v, 0) + 1
+
+        max_count = max(counter.values())
+        candidates = [v for v, c in counter.items() if c == max_count]
+        return self.random_choice(candidates)
+
+
     def guess_by_random(self):
         hands = self.mee_hands
         candidates = [(1, self.random_choice(hands))]
         yield from self.wrap_guess(candidates, hands)
-
-
-    def frequency_analysis(self):
-        pass
-
-
-    def history_matching(self):
-        pass
 
 
     def guess_by_last_history_all(self, mee_you):
@@ -206,6 +209,74 @@ class Widget:
         guess = self.guess_by_position_frequency_all(self.you_position_frequency)
         yield from self.wrap_guess(guess, hands)
 
+
+    def heat_general_frequency(self, choice_mee_you):
+        gf = self.general_frequency
+
+        for n in range(6+1):
+            key = (n, tuple(self.mee_hands[6-n:]), None)
+            gf[key] = gf.get(key, []) + [choice_mee_you]
+
+            key = (n, None, tuple(self.you_hands[6-n:]))
+            gf[key] = gf.get(key, []) + [choice_mee_you]
+
+            key = (n, tuple(self.mee_hands[6-n:]), tuple(self.you_hands[6-n:]))
+            gf[key] = gf.get(key, []) + [choice_mee_you]
+
+        self.general_frequency = gf
+
+
+    def guess_by_hands_all(self):
+        gf = self.general_frequency
+        history = self.history
+        hands = self.mee_hands
+
+        n = len(history)
+        mee_h = tuple(mee for mee, you in history)
+        you_h = tuple(you for mee, you in history)
+        key = (n, mee_h, you_h)
+        value = [v for v in gf.get(key, []) if v in hands]
+
+        choice = self.mode_choice(m for m, y in value) if value else self.random_choice(hands)
+        yield from self.wrap_guess([(1, choice)], hands)
+
+        choice = self.mode_choice(y for m, y in value) if value else self.random_choice(hands)
+        yield from self.wrap_guess([(1, choice)], hands)
+
+
+    def guess_by_hands_mee(self):
+        gf = self.general_frequency
+        history = self.history
+        hands = self.mee_hands
+
+        n = len(history)
+        mee_h = tuple(mee for mee, you in history)
+        key = (n, mee_h, None)
+        value = [v for v in gf.get(key, []) if v in hands]
+
+        choice = self.mode_choice(m for m, y in value) if value else self.random_choice(hands)
+        yield from self.wrap_guess([(1, choice)], hands)
+
+        choice = self.mode_choice(y for m, y in value) if value else self.random_choice(hands)
+        yield from self.wrap_guess([(1, choice)], hands)
+
+
+    def guess_by_hands_you(self):
+        gf = self.general_frequency
+        history = self.history
+        hands = self.mee_hands
+
+        n = len(history)
+        you_h = tuple(you for mee, you in history)
+        key = (n, None, you_h)
+        value = [v for v in gf.get(key, []) if v in hands]
+
+        choice = self.mode_choice(m for m, y in value) if value else self.random_choice(hands)
+        yield from self.wrap_guess([(1, choice)], hands)
+
+        choice = self.mode_choice(y for m, y in value) if value else self.random_choice(hands)
+        yield from self.wrap_guess([(1, choice)], hands)
+
     
     def guess_all(self):
         yield from self.guess_by_random()
@@ -213,6 +284,9 @@ class Widget:
         yield from self.guess_by_last_history_you()
         yield from self.guess_by_position_frequency_mee()
         yield from self.guess_by_position_frequency_you()
+        yield from self.guess_by_hands_all()
+        yield from self.guess_by_hands_mee()
+        yield from self.guess_by_hands_you()
 
 
     def think(self, hands, history, old_games):
@@ -265,6 +339,8 @@ class Widget:
 
 
     def heat(self, choice_mee_you):
+        self.heat_general_frequency(choice_mee_you)
+
         you = str_to_index(choice_mee_you[1])
         solutions = self.solutions
         scores = self.scores
