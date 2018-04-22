@@ -188,6 +188,12 @@ class Widget:
         # B2: advanced derived info
         self.build_position_frequency()
 
+        if False:
+            print('hands:', hands)
+            print('history:', history)
+            print('old_games:', old_games)
+            print()
+
         #print(self.mee_position_frequency)
         #print(self.you_position_frequency)
 
@@ -195,14 +201,33 @@ class Widget:
         #choice = self.mee_guess()
         choice = list(self.you_guess())[1]
         str_choice = index_to_str(choice)
-        print('choice: ', str_choice)
-
         return str_choice
 
 
 
-def think(hands, history, old_games):
+def think(_hands, _history, _old_games):
+    # NB(xenosoz, 2018): framework for re-calculate histories
     w = Widget()
-    return w.think(hands, history, old_games)
+
+    for game_idx in range(len(_old_games)):
+        old_games = _old_games[:game_idx]
+        game = _old_games[game_idx]
+        hands = set('12345!')
+
+        for history_idx in range(len(game)):
+            choice = w.think(sorted(hands), game[:history_idx], old_games)
+            hands.remove(choice)
+
+    hands = set('12345!')
+    for history_idx in range(len(_history)):
+        choice = w.think(sorted(hands), _history[:history_idx], _old_games)
+        hands.remove(choice)
+
+    assert(set(hands) == set(_hands))
+
+    choice = w.think(sorted(_hands), _history, _old_games)
+    return choice
+
+
 
 
