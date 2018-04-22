@@ -114,9 +114,10 @@ class Widget:
                 yield self.random_choice(hands)
 
 
-    def guess_randomly(self):
+    def guess_by_random(self):
         hands = self.mee_hands
-        yield self.random_choice(hands)
+        candidates = [(1, self.random_choice(hands))]
+        yield from self.wrap_guess(candidates, hands)
 
 
     def frequency_analysis(self):
@@ -125,6 +126,33 @@ class Widget:
 
     def history_matching(self):
         pass
+
+
+    def guess_by_last_history_all(self, mee_you):
+        old_games = self.old_games
+        history = self.history
+        hands = self.mee_hands  # NB(xenosoz, 2018): always choose 'mee' here.
+
+        k = len(history)
+        guess = None
+
+        if old_games:
+            if k < len(old_games[-1]):
+                guess = old_games[-1][k][mee_you]
+
+        if guess is None:
+            guess = self.random_choice(range(6))
+
+        candidates = [(1, guess)]
+        yield from self.wrap_guess(candidates, hands)
+
+
+    def guess_by_last_history_mee(self):
+        yield from self.guess_by_last_history_all(0)
+
+
+    def guess_by_last_history_you(self):
+        yield from self.guess_by_last_history_all(1)
 
 
     def build_position_frequency(self):
@@ -144,7 +172,7 @@ class Widget:
         self.you_position_frequency = you_pf
 
 
-    def guess_position_frequency_all(self, pf):
+    def guess_by_position_frequency_all(self, pf):
         round_idx = self.round_idx
 
         z = sum(pf[round_idx])
@@ -157,24 +185,26 @@ class Widget:
         return sorted(((pf[round_idx][idx]/float(z), idx) for idx in candidates), reverse=True)
 
 
-    def guess_position_frequency_mee(self):
+    def guess_by_position_frequency_mee(self):
         hands = self.mee_hands  # NB(xenosoz, 2018): always choose 'mee' here.
 
-        guess = self.guess_position_frequency_all(self.mee_position_frequency)
+        guess = self.guess_by_position_frequency_all(self.mee_position_frequency)
         yield from self.wrap_guess(guess, hands)
 
 
-    def guess_position_frequency_you(self):
+    def guess_by_position_frequency_you(self):
         hands = self.mee_hands  # NB(xenosoz, 2018): always choose 'mee' here.
 
-        guess = self.guess_position_frequency_all(self.you_position_frequency)
+        guess = self.guess_by_position_frequency_all(self.you_position_frequency)
         yield from self.wrap_guess(guess, hands)
 
     
-    def guess(self):
-        yield from self.guess_randomly()
-        yield from self.guess_position_frequency_mee()
-        yield from self.guess_position_frequency_you()
+    def guess_all(self):
+        yield from self.guess_by_random()
+        yield from self.guess_by_last_history_mee()
+        yield from self.guess_by_last_history_you()
+        yield from self.guess_by_position_frequency_mee()
+        yield from self.guess_by_position_frequency_you()
 
 
     def think(self, hands, history, old_games):
@@ -201,7 +231,7 @@ class Widget:
         #print(self.you_position_frequency)
 
 
-        solutions = list(self.guess())
+        solutions = list(self.guess_all())
         if self.scores is None:
             scores = [0] * len(solutions)
         else:

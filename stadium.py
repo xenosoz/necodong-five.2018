@@ -111,6 +111,9 @@ if __name__ == '__main__':
     lhs_name = 'bots.f-killer'
     rhs_name = 'dummies.constant-C74'
     
+    #lhs_name = 'bots.f-killer'
+    #rhs_name = 'dummies.jinna-A'
+
     r = play_a_game(lhs_name, rhs_name, debug=True)
     print(r)
 
