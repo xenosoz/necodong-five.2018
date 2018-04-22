@@ -108,8 +108,8 @@ if __name__ == '__main__':
     #lhs_name = 'bots.constant-A'
     #rhs_name = 'dummies.constant-C74'
 
-    lhs_name = 'bots.f-killer'
-    rhs_name = 'dummies.constant-C74'
+    lhs_name = 'bots.congrats'
+    rhs_name = 'bots.static-killer'
     
     #lhs_name = 'bots.f-killer'
     #rhs_name = 'dummies.jinna-A'
