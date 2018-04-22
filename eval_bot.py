@@ -20,7 +20,7 @@ def eval_bot(bot_name):
 
 if __name__ == '__main__':
     import sys
-    bot_name = 'bots.constant-A' if len(sys.argv) <= 1 else sys.argv[1]
+    bot_name = 'bots.f-killer' if len(sys.argv) <= 1 else sys.argv[1]
 
     print(bot_name)
     print('=' * len(bot_name))

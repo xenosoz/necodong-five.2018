@@ -114,8 +114,9 @@ class Widget:
                 yield self.random_choice(hands)
 
 
-    def random_guess(self):
-        pass
+    def guess_randomly(self):
+        hands = self.mee_hands
+        yield self.random_choice(hands)
 
 
     def frequency_analysis(self):
@@ -171,6 +172,7 @@ class Widget:
 
     
     def guess(self):
+        yield from self.guess_randomly()
         yield from self.guess_position_frequency_mee()
         yield from self.guess_position_frequency_you()
 
