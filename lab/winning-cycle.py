@@ -19,10 +19,11 @@ def round_score(x, y):
     return ((key >> (x*12 + y*2)) & 0x3) - 1
 
 
-# (0, 4, 2, 5, 3, 1)
-# (0, 4, 3, 2, 5, 1)
-# (0, 4, 5, 3, 2, 1)
+# (0, 1, 2, 3, 5, 4)
+# (0, 1, 3, 5, 2, 4)
+# (0, 1, 5, 2, 3, 4)
 
 for seq in permutations(range(6)):
-    if all(round_score(a, b) > 0 for a, b in zip(seq, seq[1:] + seq[:1])):
+    if all(round_score(a, b) < 0 for a, b in zip(seq, seq[1:] + seq[:1])):
+        # NB(xenosoz, 2018): B wins!
         print(seq)

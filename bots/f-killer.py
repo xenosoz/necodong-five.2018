@@ -69,21 +69,26 @@ def LCG(seed):
 
 
 def shift_0(x, c):
-    cycle = (0, 4, 2, 5, 3, 1)
+    cycle = (0, 1, 2, 3, 5, 4)
     idx = (cycle.index(x) + c) % len(cycle)
     return cycle[idx]
 
 
 def shift_1(x, c):
-    cycle = (0, 4, 3, 2, 5, 1)
+    cycle = (0, 1, 3, 5, 2, 4)
     idx = (cycle.index(x) + c) % len(cycle)
     return cycle[idx]
 
 
 def shift_2(x, c):
-    cycle = (0, 4, 5, 3, 2, 1) 
+    cycle = (0, 1, 5, 2, 3, 4)
     idx = (cycle.index(x) + c) % len(cycle)
     return cycle[idx]
+
+
+def multiplex(choice, c):
+    '''c in [0, 18)'''
+    return [shift_0, shift_1, shift_2][c//6](choice, c%6)
 
 
 class Widget:
@@ -95,6 +100,16 @@ class Widget:
         r = self.random.__next__()
         n = len(pool)
         return pool[r % n]
+
+    def wrap_guess(self, guesses, hands):
+        for c in range(18):
+            for prob, raw_choice in guesses:
+                choice = multiplex(raw_choice, c)
+                if choice in hands:
+                    yield choice
+                    break
+            else:
+                yield self.random_choice(hands)
 
 
     def random_guess(self):
@@ -126,18 +141,31 @@ class Widget:
         self.you_position_frequency = you_pf
 
 
-    def mee_guess(self):
+    def all_guess(self, pf):
         round_idx = self.round_idx
-        mee_hands = self.mee_hands
-        mee_pf = self.mee_position_frequency
 
-        good_value = max(mee_pf[round_idx][idx] for idx in mee_hands)
-        candidates = [idx for idx in mee_hands if mee_pf[round_idx][idx] == good_value]
+        z = sum(pf[round_idx])
+        good_value = max(pf[round_idx][idx] for idx in range(6))
+        candidates = [idx for idx in range(6) if pf[round_idx][idx] == good_value]
 
-        if not candidates:
-            return None
+        if not candidates or z == 0:
+            return []
 
-        return self.random_choice(candidates)
+        return sorted(((pf[round_idx][idx]/float(z), idx) for idx in candidates), reverse=True)
+
+
+    def mee_guess(self):
+        hands = self.mee_hands  # NB(xenosoz, 2018): always choose 'mee' here.
+
+        guess = self.all_guess(self.mee_position_frequency)
+        yield from self.wrap_guess(guess, hands)
+
+
+    def you_guess(self):
+        hands = self.mee_hands  # NB(xenosoz, 2018): always choose 'mee' here.
+
+        guess = self.all_guess(self.you_position_frequency)
+        yield from self.wrap_guess(guess, hands)
 
 
     def think(self, hands, history, old_games):
@@ -160,11 +188,12 @@ class Widget:
         # B2: advanced derived info
         self.build_position_frequency()
 
-        print(self.mee_position_frequency)
-        print(self.you_position_frequency)
+        #print(self.mee_position_frequency)
+        #print(self.you_position_frequency)
 
 
-        choice = self.mee_guess()
+        #choice = self.mee_guess()
+        choice = list(self.you_guess())[1]
         str_choice = index_to_str(choice)
         print('choice: ', str_choice)
 
