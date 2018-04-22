@@ -57,6 +57,17 @@ def permutations(iterable):
             o[j] = -o[j]
 
 
+def LCG(seed):
+    m = 2**32
+    a = 1664525
+    c = 1013904223
+    
+    x = seed
+    while True:
+        x = (a * x + c) % m
+        yield x
+
+
 def random_guess():
     pass
 
@@ -90,6 +101,8 @@ def think(hands, history, old_games):
 for x in permutations([1,2,3]):
     print(x)
 
+for x in LCG(3141592):
+    print(x % 5)
 
 
 
